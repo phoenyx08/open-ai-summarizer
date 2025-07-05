@@ -127,9 +127,75 @@ The service includes comprehensive error handling for:
 
 ### Running Tests
 
+The project includes comprehensive testing capabilities:
+
+#### Quick Test Run
 ```bash
-pytest  # If tests are implemented
+python run_tests.py
 ```
+
+#### Manual Test Commands
+
+1. **Install test dependencies**:
+```bash
+pip install -r requirements.txt
+```
+
+2. **Run unit tests**:
+```bash
+pytest tests/test_unit.py -v
+```
+
+3. **Run integration tests**:
+```bash
+pytest tests/test_integration.py -v
+```
+
+4. **Run all tests**:
+```bash
+pytest tests/ -v
+```
+
+#### Test Environment Setup
+
+1. **Create test PDF**:
+```bash
+python create_test_pdf.py
+```
+
+2. **Start mock external API server**:
+```bash
+python mock_external_api.py
+```
+
+3. **Test the full flow manually**:
+```bash
+# In one terminal - start mock external API
+python mock_external_api.py
+
+# In another terminal - start main application
+uvicorn main:app --reload
+
+# In a third terminal - test upload
+curl -X POST "http://localhost:8000/upload" \
+  -H "Authorization: Bearer test_bearer_token" \
+  -F "file=@tests/sample_document.pdf"
+```
+
+#### Test Coverage
+
+The test suite includes:
+- **Unit Tests**: Test individual functions (PDF extraction, OpenAI integration, authentication)
+- **Integration Tests**: Test API endpoints and full request/response flow
+- **End-to-End Tests**: Test complete workflow with mock external API
+- **Error Handling Tests**: Test various error conditions and edge cases
+
+#### Test Configuration
+
+- **Test Environment**: Uses `.env.test` for test-specific configuration
+- **Mock Services**: Includes mock external API server for testing
+- **Sample Data**: Automatically generated test PDF files
+- **Test Isolation**: Each test runs independently with proper setup/teardown
 
 ### Code Quality
 
@@ -139,6 +205,7 @@ The codebase follows Python best practices with:
 - Error handling
 - Security considerations
 - Clear documentation
+- Comprehensive test coverage
 
 ## Security Notes
 
