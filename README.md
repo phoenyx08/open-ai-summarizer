@@ -61,7 +61,7 @@ HOST=0.0.0.0
 ### Starting the Server
 
 ```bash
-uvicorn main:app --reload
+python main.py
 ```
 
 The API will be available at `http://localhost:8000`
