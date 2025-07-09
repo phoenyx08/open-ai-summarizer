@@ -89,6 +89,7 @@ class TestExternalAPIIntegration:
         """Test successful summary forwarding"""
         test_summary = "Test summary content"
         test_filename = "test.pdf"
+        test_entity_id = "123e4567-e89b-12d3-a456-426614174000"
         
         # Mock httpx response
         mock_response = Mock()
@@ -97,7 +98,7 @@ class TestExternalAPIIntegration:
         with patch('httpx.AsyncClient') as mock_client:
             mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
             
-            result = await forward_summary(test_summary, test_filename)
+            result = await forward_summary(test_summary, test_filename, test_entity_id)
             assert result is True
     
     @pytest.mark.asyncio
@@ -105,6 +106,7 @@ class TestExternalAPIIntegration:
         """Test external API error handling"""
         test_summary = "Test summary content"
         test_filename = "test.pdf"
+        test_entity_id = "123e4567-e89b-12d3-a456-426614174000"
         
         # Mock httpx response with error
         mock_response = Mock()
@@ -115,7 +117,7 @@ class TestExternalAPIIntegration:
             mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
             
             with pytest.raises(HTTPException) as exc_info:
-                await forward_summary(test_summary, test_filename)
+                await forward_summary(test_summary, test_filename, test_entity_id)
             assert exc_info.value.status_code == 500
     
     @pytest.mark.asyncio
@@ -123,6 +125,7 @@ class TestExternalAPIIntegration:
         """Test timeout handling"""
         test_summary = "Test summary content"
         test_filename = "test.pdf"
+        test_entity_id = "123e4567-e89b-12d3-a456-426614174000"
         
         with patch('httpx.AsyncClient') as mock_client:
             mock_client.return_value.__aenter__.return_value.post = AsyncMock(
@@ -130,7 +133,7 @@ class TestExternalAPIIntegration:
             )
             
             with pytest.raises(HTTPException) as exc_info:
-                await forward_summary(test_summary, test_filename)
+                await forward_summary(test_summary, test_filename, test_entity_id)
             assert exc_info.value.status_code == 500
 
 class TestAuthentication:

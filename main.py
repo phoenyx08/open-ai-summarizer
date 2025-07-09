@@ -1,7 +1,8 @@
 import os
 import logging
 from typing import Optional
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, status
+from uuid import UUID
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, status, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 import fitz  # PyMuPDF
@@ -114,12 +115,13 @@ async def summarize_text(text: str) -> str:
             detail=f"Failed to summarize text: {str(e)}"
         )
 
-async def forward_summary(summary: str, filename: str) -> bool:
+async def forward_summary(summary: str, filename: str, entity_id: str) -> bool:
     """Forward summary to external API endpoint"""
     try:
         payload = {
             "filename": filename,
-            "summary": summary
+            "summary": summary,
+            "entityId": entity_id
         }
         
         headers = {
@@ -165,15 +167,26 @@ async def root():
 @app.post("/upload")
 async def upload_pdf(
     file: UploadFile = File(...),
+    entityId: str = Form(...),
     token: str = Depends(verify_token)
 ):
     """
     Upload a PDF file for summarization.
     
     - Accepts PDF files via multipart/form-data
+    - Requires entityId in UUID format
     - Requires Bearer token authentication
     - Returns success message after forwarding summary to external API
     """
+    
+    # Validate entityId format
+    try:
+        UUID(entityId)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="entityId must be a valid UUID format"
+        )
     
     # Validate file type
     if not file.filename.lower().endswith('.pdf'):
@@ -201,13 +214,14 @@ async def upload_pdf(
         summary = await summarize_text(extracted_text)
         
         # Forward summary to external API
-        await forward_summary(summary, file.filename)
+        await forward_summary(summary, file.filename, entityId)
         
         logger.info(f"Successfully processed and forwarded summary for: {file.filename}")
         
         return {
             "message": "PDF processed and summary forwarded successfully",
             "filename": file.filename,
+            "entityId": entityId,
             "status": "success"
         }
     
