@@ -86,7 +86,8 @@ Content-Type: multipart/form-data
 ```bash
 curl -X POST "http://localhost:8000/upload" \
   -H "Authorization: Bearer your_bearer_token_here" \
-  -F "file=@document.pdf"
+  -F "file=@document.pdf" \
+  -F "entityId=123e4567-e89b-12d3-a456-426614174000"
 ```
 
 **Response**:
@@ -94,30 +95,40 @@ curl -X POST "http://localhost:8000/upload" \
 {
   "message": "PDF processed and summary forwarded successfully",
   "filename": "document.pdf",
+  "entityId": "123e4567-e89b-12d3-a456-426614174000",
   "status": "success"
 }
 ```
 
+### Request Parameters
+
+- `file`: PDF document to be summarized (required)
+- `entityId`: UUID string for data traceability (required)
+
 ### Response Codes
 
 - `200 OK`: Successful summary transmission
-- `400 Bad Request`: Invalid file or empty upload
+- `400 Bad Request`: Invalid file, empty upload, or invalid entityId format
 - `403 Forbidden`: Invalid/missing authentication token
+- `422 Unprocessable Entity`: Missing required parameters
 - `500 Internal Server Error`: Processing failure
 
 ## API Workflow
 
-1. **Upload**: Client uploads PDF with Bearer token authentication
-2. **Extract**: Service extracts text from PDF using PyMuPDF
-3. **Summarize**: Text is summarized using OpenAI GPT-4
-4. **Forward**: Summary is sent to configured external API endpoint
-5. **Response**: Success confirmation returned to client
+1. **Upload**: Client uploads PDF with entityId and Bearer token authentication
+2. **Validate**: Service validates entityId format (must be valid UUID)
+3. **Extract**: Service extracts text from PDF using PyMuPDF
+4. **Summarize**: Text is summarized using OpenAI GPT-4
+5. **Forward**: Summary with entityId is sent to configured external API endpoint
+6. **Response**: Success confirmation with entityId returned to client
 
 ## Error Handling
 
 The service includes comprehensive error handling for:
 - Invalid file types (non-PDF files)
 - Empty files
+- Invalid entityId format (must be valid UUID)
+- Missing required parameters
 - PDF processing errors
 - OpenAI API failures
 - External API communication issues
@@ -179,7 +190,8 @@ uvicorn main:app --reload
 # In a third terminal - test upload
 curl -X POST "http://localhost:8000/upload" \
   -H "Authorization: Bearer test_bearer_token" \
-  -F "file=@tests/sample_document.pdf"
+  -F "file=@tests/sample_document.pdf" \
+  -F "entityId=123e4567-e89b-12d3-a456-426614174000"
 ```
 
 #### Test Coverage

@@ -66,6 +66,7 @@ class TestIntegrationAPI:
         response = self.client.post(
             "/upload",
             files={"file": ("test.txt", text_content, "text/plain")},
+            data={"entityId": "123e4567-e89b-12d3-a456-426614174000"},
             headers={"Authorization": f"Bearer {self.test_token}"}
         )
         assert response.status_code == 400
@@ -76,6 +77,7 @@ class TestIntegrationAPI:
         response = self.client.post(
             "/upload",
             files={"file": ("test.pdf", b"", "application/pdf")},
+            data={"entityId": "123e4567-e89b-12d3-a456-426614174000"},
             headers={"Authorization": f"Bearer {self.test_token}"}
         )
         assert response.status_code == 400
@@ -103,9 +105,11 @@ class TestIntegrationAPI:
         pdf_content = self.create_test_pdf()
         
         # Make request
+        test_entity_id = "123e4567-e89b-12d3-a456-426614174000"
         response = self.client.post(
             "/upload",
             files={"file": ("test.pdf", pdf_content, "application/pdf")},
+            data={"entityId": test_entity_id},
             headers={"Authorization": f"Bearer {self.test_token}"}
         )
         
@@ -114,6 +118,7 @@ class TestIntegrationAPI:
         response_data = response.json()
         assert response_data["message"] == "PDF processed and summary forwarded successfully"
         assert response_data["filename"] == "test.pdf"
+        assert response_data["entityId"] == test_entity_id
         assert response_data["status"] == "success"
         
         # Verify OpenAI was called
@@ -135,6 +140,7 @@ class TestIntegrationAPI:
         response = self.client.post(
             "/upload",
             files={"file": ("test.pdf", pdf_content, "application/pdf")},
+            data={"entityId": "123e4567-e89b-12d3-a456-426614174000"},
             headers={"Authorization": f"Bearer {self.test_token}"}
         )
         
@@ -168,6 +174,7 @@ class TestIntegrationAPI:
         response = self.client.post(
             "/upload",
             files={"file": ("test.pdf", pdf_content, "application/pdf")},
+            data={"entityId": "123e4567-e89b-12d3-a456-426614174000"},
             headers={"Authorization": f"Bearer {self.test_token}"}
         )
         
@@ -182,12 +189,39 @@ class TestIntegrationAPI:
         response = self.client.post(
             "/upload",
             files={"file": ("test.pdf", invalid_pdf, "application/pdf")},
+            data={"entityId": "123e4567-e89b-12d3-a456-426614174000"},
             headers={"Authorization": f"Bearer {self.test_token}"}
         )
         
         # Should get 500 error due to PDF processing failure
         assert response.status_code == 500
         assert "Failed to extract text from PDF" in response.json()["detail"]
+    
+    def test_upload_invalid_entity_id(self):
+        """Test upload endpoint with invalid entityId format"""
+        pdf_content = self.create_test_pdf()
+        
+        response = self.client.post(
+            "/upload",
+            files={"file": ("test.pdf", pdf_content, "application/pdf")},
+            data={"entityId": "invalid-uuid-format"},
+            headers={"Authorization": f"Bearer {self.test_token}"}
+        )
+        
+        assert response.status_code == 400
+        assert "entityId must be a valid UUID format" in response.json()["detail"]
+    
+    def test_upload_missing_entity_id(self):
+        """Test upload endpoint without entityId"""
+        pdf_content = self.create_test_pdf()
+        
+        response = self.client.post(
+            "/upload",
+            files={"file": ("test.pdf", pdf_content, "application/pdf")},
+            headers={"Authorization": f"Bearer {self.test_token}"}
+        )
+        
+        assert response.status_code == 422  # Validation error for missing required field
 
 class TestAPIDocumentation:
     """Test API documentation endpoints"""
